@@ -1,0 +1,316 @@
+<!--
+Desafio do Dinheiro — Modelo pronto para GitHub Pages (tudo local)
+INSTRUÇÕES RÁPIDAS:
+1) Baixe este arquivo como "index.html".
+2) Crie um repositório no GitHub (público).
+3) Faça o upload do index.html no branch main.
+4) Nas configurações do repositório -> Pages, selecione a branch main e a pasta / (root). O GitHub Pages publicará em https://<seu-usuario>.github.io/<seu-repo>/ em alguns minutos.
+
+OBSERVAÇÕES TÉCNICAS:
+- Este arquivo é autônomo (todos os recursos são embutidos: SVGs inline, estilos e scripts).
+- Paleta: verde e amarelo (tema brasileiro).
+- 5 fases × 5 perguntas, sistema de pontuação, certificado em PNG gerado por canvas.
+-->
+
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Desafio do Dinheiro — Quem Manda no Bolso?</title>
+  <meta name="author" content="Desenvolvido para educação financeira (12-17 anos)">
+  <style>
+    /* Paleta verde/amarelo — totalmente local */
+    :root{
+      --bg1:#f7fbf6; --bg2:#eef8ee; --card:#ffffff;
+      --green:#2e9d6d; --green-2:#60bf95; --yellow:#f4b41a; --muted:#6b7280;
+      --shadow: 0 8px 22px rgba(12,30,30,.06);
+    }
+    *{box-sizing:border-box;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif}
+    body{margin:0;background:linear-gradient(180deg,var(--bg1),var(--bg2));color:#072018}
+    .wrap{max-width:1100px;margin:24px auto;padding:18px}
+    header{display:flex;align-items:center;justify-content:space-between}
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand svg{width:64px;height:64px}
+    h1{margin:0;font-size:20px}
+    .subtitle{color:var(--muted);font-size:13px}
+    .controls{display:flex;gap:10px}
+    .btn{background:var(--green);color:#fff;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+    .btn.ghost{background:transparent;border:2px solid var(--green);color:var(--green)}
+
+    .main{display:grid;grid-template-columns:1fr 340px;gap:18px;margin-top:18px}
+    .card{background:var(--card);padding:18px;border-radius:14px;box-shadow:var(--shadow)}
+
+    .screen{display:none}
+    .screen.active{display:block}
+
+    .question-title{font-size:18px;margin-bottom:12px}
+    .options{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .opt{background:#f7fff6;padding:12px;border-radius:10px;border:2px solid transparent;cursor:pointer;display:flex;gap:8px;align-items:center}
+    .opt strong{width:26px;height:26px;border-radius:6px;background:linear-gradient(180deg,var(--green),var(--green-2));display:inline-grid;place-items:center;color:#fff}
+    .opt:hover{transform:translateY(-3px);transition:all .12s}
+    .opt.correct{border-color:#16a34a;background:#ecfff0}
+    .opt.wrong{border-color:#ef4444;background:#fff5f7}
+
+    .meta{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+    .progress{flex:1;margin-right:12px;background:#e9f6ef;border-radius:8px;height:12px;overflow:hidden}
+    .fill{height:100%;background:linear-gradient(90deg,var(--green),var(--green-2));width:0%}
+
+    .side{position:sticky;top:18px}
+    .panel h3{margin-top:0}
+    .muted{color:var(--muted)}
+
+    footer{margin-top:18px;text-align:center;color:var(--muted);font-size:13px}
+    @media (max-width:900px){.main{grid-template-columns:1fr}.side{position:static}}
+
+    /* small animations */
+    .badge{display:inline-block;padding:6px 8px;border-radius:8px;background:linear-gradient(90deg,var(--yellow),#f8d56b);font-weight:700}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <!-- moeda SVG local -->
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+          <circle cx="32" cy="32" r="30" fill="var(--yellow)" stroke="#d18f12" stroke-width="2"/>
+          <text x="50%" y="57%" fill="#fff" font-size="24" text-anchor="middle" font-family="Verdana, Geneva, sans-serif">R$</text>
+        </svg>
+        <div>
+          <h1>Desafio do Dinheiro</h1>
+          <div class="subtitle">Quem Manda no Bolso? — Idade: 12–17 anos</div>
+        </div>
+      </div>
+      <div class="controls">
+        <button class="btn" id="startBtn">Jogar</button>
+        <button class="btn ghost" id="instrBtn">Instruções</button>
+      </div>
+    </header>
+
+    <div class="main">
+      <div>
+        <div class="card screen" id="menuScreen">
+          <h2 class="center">Bem-vindo(a) ao Desafio do Dinheiro!</h2>
+          <p class="muted">Teste suas decisões financeiras em 5 fases. Cada fase tem 5 perguntas. Obtenha pontos, título e certificado ao final.</p>
+          <div style="display:flex;gap:10px;justify-content:center;margin-top:16px">
+            <button class="btn" id="playNow">Começar</button>
+            <button class="btn ghost" id="demoBtn">Ver exemplo de pergunta</button>
+          </div>
+        </div>
+
+        <div class="card screen" id="instrScreen">
+          <h3>Como jogar</h3>
+          <ol>
+            <li>Responda 25 perguntas (5 fases × 5 perguntas).</li>
+            <li>Cada acerto vale <span class="badge">+10 pts</span>. Acertos consecutivos dão <span class="badge">+5 pts</span> de bônus.</li>
+            <li>No final, baixe seu certificado em PNG.</li>
+          </ol>
+          <div style="display:flex;justify-content:flex-end;margin-top:12px">
+            <button class="btn" id="instPlay">Jogar agora</button>
+          </div>
+        </div>
+
+        <div class="card screen" id="questionScreen">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div class="muted">Fase <span id="phaseNum">1</span> • Pergunta <span id="qNum">1</span>/5</div>
+              <div class="question-title" id="qText">Texto da pergunta</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="text-align:right">
+                <div class="muted">Pontuação</div>
+                <div style="font-weight:800;font-size:20px" id="scoreDisplay">0</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="options" id="optionsArea" style="margin-top:12px">
+          </div>
+
+          <div class="meta">
+            <div class="muted">Tempo: <span id="timer">—</span></div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="progress" title="Progresso"><div class="fill" id="progressFill" style="width:0%"></div></div>
+              <div class="muted">Respondidas: <span id="answeredCount">0</span>/25</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card screen" id="resultScreen">
+          <h2 class="center">Parabéns — Finalizou!</h2>
+          <p class="center muted">Sua pontuação total:</p>
+          <div style="text-align:center;margin-top:8px">
+            <div style="font-weight:800;font-size:34px" id="finalScore">0</div>
+            <div class="muted" id="finalTitle">—</div>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:center;margin-top:16px">
+            <button class="btn" id="certBtn">Gerar Certificado</button>
+            <button class="btn ghost" id="againBtn">Jogar novamente</button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="side">
+        <div class="card panel" id="sidePanel">
+          <h3>Dicas do Cofrinho Sabidão</h3>
+          <ul>
+            <li>Separe sempre uma parte para poupar.</li>
+            <li>Compare preços antes de comprar.</li>
+            <li>Cartão de crédito tem juros se não pagar a fatura.</li>
+            <li>Desconfie de ofertas muito vantajosas em sites desconhecidos.</li>
+          </ul>
+          <div style="margin-top:12px"><strong>Fase atual:</strong> <span id="panelPhase">1</span></div>
+        </div>
+      </aside>
+    </div>
+
+    <footer>Arquivo autônomo pronto para publicação no GitHub Pages — tema verde e amarelo.</footer>
+  </div>
+
+  <!-- canvas para certificado -->
+  <canvas id="certCanvas" width="1200" height="675" style="display:none"></canvas>
+
+  <!-- modal simples -->
+  <div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);align-items:center;justify-content:center">
+    <div style="background:#fff;padding:18px;border-radius:12px;max-width:640px;margin:12px">
+      <h3 id="modalTitle">Modal</h3>
+      <p id="modalMsg"></p>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+        <button id="modalClose" class="btn ghost">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ======= Conteúdo das perguntas (local) ======= */
+    const QUESTIONS = [
+      // Fase 1
+      [
+        {q:'Você quer um tênis novo, mas o seu ainda está em bom estado. O que fazer?', opts:['Comprar porque está na moda','Guardar o dinheiro para quando realmente precisar','Pedir aos pais outro modelo mais caro','Comprar e parcelar em 10x'], a:1},
+        {q:'O que é necessidade?', opts:['Comida e moradia','Ter sempre o último celular','Viajar todo mês','Colecionar tênis'], a:0},
+        {q:'Se algo está na promoção, você deve:', opts:['Comprar logo antes que acabe','Avaliar se precisa daquilo','Pedir emprestado do amigo','Vender seu usado'], a:1},
+        {q:'Comprar por impulso costuma resultar em:', opts:['Economia a longo prazo','Gastos desnecessários','Poupança automática','Renda extra'], a:1},
+        {q:'Dica para evitar consumo impulsivo:', opts:['Ir às compras sem lista','Levar só cartão de crédito','Esperar 24h antes de decidir','Comprar porque está barato'], a:2}
+      ],
+      // Fase 2
+      [
+        {q:'João recebe R$ 50 por semana. Ele quer comprar um fone de R$ 200. Se ele guardar R$ 20 por semana, em quantas semanas conseguirá?', opts:['8','10','12','14'], a:1},
+        {q:'O que é um orçamento?', opts:['Um plano que mostra receitas e despesas','Só anotar preços','Contar moedas','Comprar no cartão sem pensar'], a:0},
+        {q:'Se você ganha mesada, o ideal é:', opts:['Gastar tudo','Guardar parte regularmente','Emprestar para amigos','Fazer compras por impulso'], a:1},
+        {q:'Uma meta financeira deve ser:', opts:['Impossível','Específica e com prazo','Sem valor definido','Sempre adiada'], a:1},
+        {q:'Poupança é boa para:', opts:['Curto prazo e segurança','Ganhos muito elevados','Risco alto','Especulação'], a:0}
+      ],
+      // Fase 3
+      [
+        {q:'Ana colocou R$ 100 na poupança que rende 0,5% ao mês. Quanto terá depois de 2 meses (aprox.)?', opts:['R$101','R$101,50','R$102','R$105'], a:1},
+        {q:'Investir significa:', opts:['Guardar dinheiro sem objetivo','Aplicar dinheiro para tentar aumentar','Gastar tudo agora','Pedir dinheiro emprestado'], a:1},
+        {q:'Uma forma de ganhar renda extra é:', opts:['Oferecer serviços (ex: aulas, pets)','Ignorar oportunidades','Gastar mais','Esperar sem agir'], a:0},
+        {q:'Juros compostos são importantes porque:', opts:['Diminuem o dinheiro','Fazem o dinheiro crescer com o tempo','Só funcionam para bancos','Sempre garantem lucro'], a:1},
+        {q:'Risco e retorno: maior risco →', opts:['Maior chance de retorno maior','Menor retorno','Garantia de lucro','Sem relação'], a:0}
+      ],
+      // Fase 4
+      [
+        {q:'Você viu um celular muito barato em um site desconhecido. O que fazer?', opts:['Comprar logo','Verificar a reputação do site','Passar o cartão de um amigo','Ignorar e comprar em outro lugar'], a:1},
+        {q:'Cartão de crédito vira armadilha quando:', opts:['Você paga a fatura integral','Você só paga o mínimo','Usa com planejamento','Tem limite baixo'], a:1},
+        {q:'Promoções com pagamento rápido podem ser:', opts:['Negócio seguro','Indício de golpe','Sempre vantajosas','Isentas de risco'], a:1},
+        {q:'Empréstimo com juros altos é recomendado quando:', opts:['Para emergências essenciais','Para gastar em supérfluos','Para investir sem analisar','Sempre'], a:0},
+        {q:'Dica para evitar golpes online:', opts:['Compartilhar senha','Verificar avaliações e políticas','Comprar só pelo preço','Confiar em anúncios'], a:1}
+      ],
+      // Fase 5
+      [
+        {q:'Você recebeu R$ 1.000. O que faz?', opts:['Gastar tudo em roupas/games','Guardar 30%, doar 10%, usar o resto conscientemente','Comprar celular parcelado','Emprestar para amigos'], a:1},
+        {q:'Planejar gastos ajuda a:', opts:['Evitar dívidas e alcançar objetivos','Aumentar gastos sem controle','Diminuir renda','Garantir sorte'], a:0},
+        {q:'Reservar para emergência é importante porque:', opts:['Ajuda em imprevistos','Não é necessário','Gera dívidas','É perda de tempo'], a:0},
+        {q:'Doar parte do dinheiro pode:', opts:['Não trazer nada positivo','Aumentar bem-estar e responsabilidade','Ser sempre ruim','Gerar prejuízo'], a:1},
+        {q:'Decisão responsável é quando:', opts:['Você avalia riscos e prós','Age sem pensar','Segue só a moda','Compra sempre parcelado'], a:0}
+      ]
+    ];
+
+    /* ======= Estado do jogo ======= */
+    let phase = 0, qIdx = 0, score = 0, streak = 0, totalAnswered = 0;
+
+    // DOM refs
+    const show = id => document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')) || document.getElementById(id).classList.add('active');
+    document.getElementById('startBtn').onclick = ()=> show('menuScreen');
+    document.getElementById('instrBtn').onclick = ()=> show('instrScreen');
+    document.getElementById('playNow').onclick = ()=> startGame();
+    document.getElementById('instPlay').onclick = ()=> startGame();
+    document.getElementById('demoBtn').onclick = ()=>{ show('questionScreen'); renderQuestion(true); };
+
+    function startGame(){ phase=0; qIdx=0; score=0; streak=0; totalAnswered=0; updateUI(); show('questionScreen'); renderQuestion(); }
+
+    function renderQuestion(demo=false){
+      const q = QUESTIONS[phase][qIdx];
+      document.getElementById('qText').textContent = q.q;
+      document.getElementById('phaseNum').textContent = phase+1;
+      document.getElementById('qNum').textContent = qIdx+1;
+      document.getElementById('scoreDisplay').textContent = score;
+
+      const optsArea = document.getElementById('optionsArea'); optsArea.innerHTML='';
+      q.opts.forEach((opt,i)=>{
+        const btn = document.createElement('button'); btn.className='opt';
+        btn.innerHTML = `<strong>${String.fromCharCode(65+i)}</strong><div>${opt}</div>`;
+        btn.onclick = ()=>{ if(demo) return highlightDemo(q.a); handleAnswer(i); };
+        optsArea.appendChild(btn);
+      });
+      updateProgress();
+    }
+
+    function highlightDemo(correctIdx){ const buttons = document.querySelectorAll('.opt'); buttons[correctIdx].classList.add('correct'); }
+
+    function handleAnswer(i){
+      const q = QUESTIONS[phase][qIdx];
+      const buttons = document.querySelectorAll('.opt');
+      // disable
+      buttons.forEach(b=>b.onclick=null);
+      if(i===q.a){ buttons[i].classList.add('correct'); score +=10; streak +=1; if(streak>1) score +=5; }
+      else { buttons[i].classList.add('wrong'); buttons[q.a].classList.add('correct'); streak = 0; }
+      totalAnswered +=1; qIdx +=1; updateUI();
+      setTimeout(()=>{
+        if(qIdx >= QUESTIONS[phase].length){ phase +=1; qIdx = 0; }
+        if(phase >= QUESTIONS.length){ finishGame(); } else { renderQuestion(); }
+      },800);
+    }
+
+    function updateProgress(){
+      const answeredSoFar = (phase*5) + qIdx;
+      const pct = Math.round((answeredSoFar/25)*100);
+      document.getElementById('progressFill').style.width = pct + '%';
+      document.getElementById('answeredCount').textContent = answeredSoFar;
+      document.getElementById('panelPhase').textContent = phase+1;
+    }
+
+    function updateUI(){ document.getElementById('scoreDisplay').textContent = score; updateProgress(); }
+
+    function finishGame(){ document.getElementById('finalScore').textContent = score; let title='Gastador Impulsivo 💸'; if(score>=60 && score<100) title='Planejador Iniciante 📘'; if(score>=100) title='Mestre do Dinheiro 💎'; document.getElementById('finalTitle').textContent = title; show('resultScreen'); }
+
+    document.getElementById('againBtn').onclick = ()=> startGame();
+    document.getElementById('certBtn').onclick = ()=> { generateCertificate(); };
+
+    /* ===== Certificate generation (canvas) ===== */
+    function generateCertificate(){
+      const canvas = document.getElementById('certCanvas'); const ctx = canvas.getContext('2d');
+      // background
+      ctx.fillStyle = '#fff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+      // header bar
+      ctx.fillStyle = 'var(--green)'; ctx.fillRect(0,0,canvas.width,120);
+      // title
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 36px Arial'; ctx.fillText('Certificado de Conclusão',40,70);
+      // subtitle
+      ctx.fillStyle = '#072018'; ctx.font = '24px Arial'; ctx.fillText('Desafio do Dinheiro — Quem Manda no Bolso?',40,160);
+      // name placeholder
+      ctx.font = '22px Arial'; ctx.fillText('Nome: ___________________________',40,230);
+      ctx.font = '20px Arial'; ctx.fillText('Pontuação: ' + score,40,290);
+      ctx.fillText('Título: ' + document.getElementById('finalTitle').textContent,40,330);
+      ctx.font = '16px Arial'; ctx.fillText('Gerado em: ' + new Date().toLocaleDateString('pt-BR'),40,390);
+
+      // download link
+      const dataUrl = canvas.toDataURL('image/png');
+      const a = document.createElement('a'); a.href = dataUrl; a.download = 'certificado_desafio_do_dinheiro.png'; a.click();
+    }
+
+    // show menu on load
+    show('menuScreen');
+  </script>
+</body>
+</html>
